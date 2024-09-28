@@ -12,19 +12,18 @@
       <li>No drivers assigned</li>
     {% endfor %}
   </ul>
-
-  <!-- Check if the current user is already a driver for this car -->
-  {% if request.user in car.drivers.all %}
-    <form method="post" action="{% url 'taxi:assign-remove-driver' car.pk %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-danger">Remove me from this car</button>
-    </form>
-  {% else %}
-    <form method="post" action="{% url 'taxi:assign-remove-driver' car.pk %}">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-success">Assign me to this car</button>
-    </form>
-  {% endif %}
+  
+ {% if request.user in car.drivers.all %}
+  <form method="post" action="{% url 'taxi:assign-remove-driver' car.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Remove me from this car</button>
+  </form>
+{% else %}
+  <form method="post" action="{% url 'taxi:assign-remove-driver' car.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">Assign me to this car</button>
+  </form>
+{% endif %}
 
   <a href="{% url 'taxi:car-list' %}" class="btn btn-secondary">Back to Car List</a>
 {% endblock %}

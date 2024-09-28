@@ -19,6 +19,7 @@ from .views import (
     ManufacturerDeleteView,
 )
 
+
 urlpatterns = [
     path("", index, name="index"),
     path(
