@@ -1,23 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.forms import (
-    ModelForm,
-    CheckboxSelectMultiple,
-    ModelMultipleChoiceField
-)
-from django.shortcuts import render, get_object_or_404, redirect
+
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 from django.views.generic import CreateView, DeleteView, UpdateView
 
-from .forms import DriverCreationForm, DriverLicenseUpdateForm
-from .models import Driver, Car, Manufacturer
+from taxi.forms import DriverCreationForm
+from taxi.models import Driver, Car, Manufacturer
 
 
 @login_required
 def index(request):
-    """View function for the home page of the site."""
 
     num_drivers = Driver.objects.count()
     num_cars = Car.objects.count()
@@ -70,6 +65,14 @@ class CarDetailView(LoginRequiredMixin, generic.DetailView):
     model = Car
     queryset = Car.objects.all().prefetch_related("drivers")
 
+    def post(self, request, *args, **kwargs):
+        car = self.get_object()
+        if car.drivers.filter(id=request.user.id).exists():
+            car.drivers.remove(request.user)
+        else:
+            car.drivers.add(request.user)
+        return redirect(reverse("taxi:car-detail", kwargs={"pk": car.pk}))
+
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
     model = Car
@@ -113,27 +116,6 @@ class DriverDeleteView(DeleteView):
 
 class DriverLicenseUpdateView(UpdateView):
     model = get_user_model()
-    form_class = DriverLicenseUpdateForm
+    form_class = DriverCreationForm
     template_name = "taxi/driver_license_update_form.html"
     success_url = reverse_lazy("taxi:driver-list")
-
-
-@login_required
-def assign_remove_driver(request, pk):
-    car = get_object_or_404(Car, pk=pk)
-    if car.drivers.filter(id=request.user.id).exists():
-        car.drivers.remove(request.user)
-    else:
-        car.drivers.add(request.user)
-    return redirect(reverse("taxi:car-detail", kwargs={"pk": car.pk}))
-
-
-class CarCreationForm(ModelForm):
-    drivers = ModelMultipleChoiceField(
-        queryset=get_user_model().objects.all(),
-        widget=CheckboxSelectMultiple
-    )
-
-    class Meta:
-        model = Car
-        fields = ["model", "manufacturer", "drivers"]

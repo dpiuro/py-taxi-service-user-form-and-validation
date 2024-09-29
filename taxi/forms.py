@@ -1,41 +1,48 @@
 from django import forms
-from .models import Driver, Car
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UsernameField
+from django.contrib.auth.password_validation import validate_password
+from django.forms import (
+    ModelForm,
+    CheckboxSelectMultiple,
+    ModelMultipleChoiceField
+)
 
-
-class LicenseNumberValidatorMixin:
-    def validate_license_number(self, license_number):
-        if len(license_number) != 8:
-            raise forms.ValidationError(
-                "License number must consist of exactly 8 characters."
-            )
-        if not (
-            license_number[:3].isalpha() and license_number[:3].isupper()
-        ):
-            raise forms.ValidationError(
-                "The first 3 characters must be uppercase letters."
-            )
-        if not license_number[3:].isdigit():
-            raise forms.ValidationError(
-                "The last 5 characters must be digits."
-            )
-        return license_number
-
-
-class DriverLicenseUpdateForm(forms.ModelForm, LicenseNumberValidatorMixin):
-    class Meta:
-        model = Driver
-        fields = ["license_number"]
-
-    def clean_license_number(self):
-        license_number = self.cleaned_data.get("license_number")
-        return self.validate_license_number(license_number)
+from taxi.models import Driver, Car
 
 
 class DriverCreationForm(forms.ModelForm):
+    password = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput,
+        validators=[validate_password]
+    )
+    password_confirm = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput
+    )
+
     class Meta:
         model = Driver
         fields = ["username", "license_number"]
+        field_classes = {"username": UsernameField}
 
-    def clean_license_number(self):
-        license_number = self.cleaned_data.get("license_number")
-        return self.validate_license_number(license_number)
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        password_confirm = cleaned_data.get("password_confirm")
+
+        if password and password_confirm and password != password_confirm:
+            self.add_error("password_confirm", "Passwords do not match.")
+        return cleaned_data
+
+
+class CarCreationForm(ModelForm):
+    drivers = ModelMultipleChoiceField(
+        queryset=get_user_model().objects.all(),
+        widget=CheckboxSelectMultiple
+    )
+
+    class Meta:
+        model = Car
+        fields = ["model", "manufacturer", "drivers"]

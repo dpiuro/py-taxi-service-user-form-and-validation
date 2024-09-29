@@ -1,9 +1,8 @@
 from django.urls import path
 
-from .views import (
+from taxi.views import (
     DriverCreateView,
     DriverDeleteView,
-    assign_remove_driver,
     index,
     CarListView,
     CarDetailView,
@@ -70,12 +69,6 @@ urlpatterns = [
         "drivers/<int:pk>/update/",
         DriverLicenseUpdateView.as_view(),
         name="driver-update"
-    ),
-
-    path(
-        "cars/<int:pk>/assign-remove-driver/",
-        assign_remove_driver,
-        name="assign-remove-driver"
     ),
 ]
 
