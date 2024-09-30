@@ -1,33 +1,32 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
 from django.views import generic
 from django.views.generic import CreateView, DeleteView, UpdateView
+from taxi.forms import (
+    DriverCreationForm,
+    DriverLicenseUpdateForm,
+    CarCreationForm
+)
 
-from taxi.forms import DriverCreationForm
 from taxi.models import Driver, Car, Manufacturer
 
 
 @login_required
 def index(request):
-
     num_drivers = Driver.objects.count()
     num_cars = Car.objects.count()
     num_manufacturers = Manufacturer.objects.count()
-
     num_visits = request.session.get("num_visits", 0)
     request.session["num_visits"] = num_visits + 1
-
     context = {
         "num_drivers": num_drivers,
         "num_cars": num_cars,
         "num_manufacturers": num_manufacturers,
         "num_visits": num_visits + 1,
     }
-
     return render(request, "taxi/index.html", context=context)
 
 
@@ -76,7 +75,7 @@ class CarDetailView(LoginRequiredMixin, generic.DetailView):
 
 class CarCreateView(LoginRequiredMixin, generic.CreateView):
     model = Car
-    fields = "__all__"
+    form_class = CarCreationForm
     success_url = reverse_lazy("taxi:car-list")
 
 
@@ -116,6 +115,6 @@ class DriverDeleteView(DeleteView):
 
 class DriverLicenseUpdateView(UpdateView):
     model = get_user_model()
-    form_class = DriverCreationForm
-    template_name = "taxi/driver_license_update_form.html"
+    form_class = DriverLicenseUpdateForm
+    template_name = "taxi/driver_form.html"
     success_url = reverse_lazy("taxi:driver-list")
